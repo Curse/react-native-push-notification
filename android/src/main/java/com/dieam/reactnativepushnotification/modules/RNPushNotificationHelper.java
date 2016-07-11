@@ -46,14 +46,14 @@ public class RNPushNotificationHelper {
     }
 
     private PendingIntent getScheduleNotificationIntent(Bundle bundle) {
-        int notificationID;
-        String notificationIDString = bundle.getString("id");
+        int notificationID = 0;
+        // String notificationIDString = bundle.getString("id");
 
-        if ( notificationIDString != null ) {
-            notificationID = Integer.parseInt(notificationIDString);
-        } else {
-            notificationID = (int) System.currentTimeMillis();
-        }
+        // if ( notificationIDString != null ) {
+        //     notificationID = Integer.parseInt(notificationIDString);
+        // } else {
+        //     notificationID = (int) System.currentTimeMillis();
+        // }
 
         Intent notificationIntent = new Intent(mApplication, RNPushNotificationPublisher.class);
         notificationIntent.putExtra(RNPushNotificationPublisher.NOTIFICATION_ID, notificationID);
@@ -183,14 +183,14 @@ public class RNPushNotificationHelper {
             }
         }
 
-        int notificationID;
-        String notificationIDString = bundle.getString("id");
+        int notificationID = 0;
+        // String notificationIDString = bundle.getString("id");
 
-        if ( notificationIDString != null ) {
-            notificationID = Integer.parseInt(notificationIDString);
-        } else {
-            notificationID = (int) System.currentTimeMillis();
-        }
+        // if ( notificationIDString != null ) {
+        //     notificationID = Integer.parseInt(notificationIDString);
+        // } else {
+        //     notificationID = (int) System.currentTimeMillis();
+        // }
 
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext, notificationID, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
