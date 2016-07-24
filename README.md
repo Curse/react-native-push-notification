@@ -1,6 +1,6 @@
 # React Native Push Notifications
-[![npm version](https://badge.fury.io/js/react-native-push-notification.svg)](http://badge.fury.io/js/react-native-push-notification)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-push-notification.svg?maxAge=2592000)](https://img.shields.io/npm/dm/react-native-push-notification.svg?maxAge=2592000)
+[![npm version](https://badge.fury.io/js/react-native-push-notification.svg?update=2)](http://badge.fury.io/js/react-native-push-notification)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-push-notification.svg?update=2)](https://img.shields.io/npm/dm/react-native-push-notification.svg?update=2)
 
 React Native Local and Remote Notifications for iOS and Android
 
@@ -31,34 +31,33 @@ In your `AndroidManifest.xml`
 ```xml
     .....
 
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <permission
-        android:name="${applicationId}.permission.C2D_MESSAGE"
-        android:protectionLevel="signature" />
-    <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
-    <uses-permission android:name="android.permission.VIBRATE" />
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<permission
+	android:name="${applicationId}.permission.C2D_MESSAGE"
+	android:protectionLevel="signature" />
+	<uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
+	<uses-permission android:name="android.permission.VIBRATE" />
 
-    <application ....>
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND" >
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <category android:name="${applicationId}" />
-            </intent-filter>
-        </receiver>
-
-	<receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationPublisher" />
-        <service android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationRegistrationService"/>
-        <service
-            android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationListenerService"
-            android:exported="false" >
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-            </intent-filter>
-        </service>
-
+	<application ....>
+		<receiver
+			android:name="com.google.android.gms.gcm.GcmReceiver"
+			android:exported="true"
+			android:permission="com.google.android.c2dm.permission.SEND" >
+			<intent-filter>
+				<action android:name="com.google.android.c2dm.intent.RECEIVE" />
+				<category android:name="${applicationId}" />
+			</intent-filter>
+		</receiver>
+	
+		<receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationPublisher" />
+		<service android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationRegistrationService"/>
+		<service
+			android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationListenerService"
+			android:exported="false" >
+			<intent-filter>
+				<action android:name="com.google.android.c2dm.intent.RECEIVE" />
+			</intent-filter>
+		</service>
         .....
 
 ```
@@ -83,58 +82,60 @@ dependencies {
 }
 ```
 
-Register module (in `MainActivity.java`)
+Register module (in `MainApplication.java`)
 
 ```java
 import android.content.Intent; // <--- Import Intent
 import com.dieam.reactnativepushnotification.ReactNativePushNotificationPackage;  // <--- Import Package
 
-public class MainActivity extends Activity implements DefaultHardwareBackBtnHandler {
+public class MainApplication extends Application implements ReactApplication {
 
   private ReactNativePushNotificationPackage mReactNativePushNotificationPackage; // <------ Add Package Variable
 
-    /**
-     * Returns the name of the main component registered from JavaScript.
-     * This is used to schedule rendering of the component.
-     */
-    @Override
-    protected String getMainComponentName() {
-        return "YOUR_APP_NAME";
-    }
+   ...
 
-    /**
-     * Returns whether dev mode should be enabled.
-     * This enables e.g. the dev menu.
-     */
+  private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
     @Override
     protected boolean getUseDeveloperSupport() {
-        return BuildConfig.DEBUG;
+      return BuildConfig.DEBUG;
     }
 
-   /**
-   * A list of packages used by the app. If the app uses additional views
-   * or modules besides the default ones, add more packages here.
-   */
-    @Override
-    protected List<ReactPackage> getPackages() {
-      mReactNativePushNotificationPackage = new ReactNativePushNotificationPackage(this); // <------ Initialize the Package
+      @Override
+      protected List<ReactPackage> getPackages() {
+      mReactNativePushNotificationPackage = new ReactNativePushNotificationPackage(); // <------ Initialize the Package
+
       return Arrays.<ReactPackage>asList(
-        new MainReactPackage(),
-        new VectorIconsPackage(),
-        new FabricPackage(),
-        mReactNativePushNotificationPackage // <---- Add the Package
+          new MainReactPackage(),
+          mReactNativePushNotificationPackage // <---- Add the Package
       );
     }
+  };
+
+   // Add onNewIntent
+   public void onNewIntent(Intent intent) {
+      if ( mReactNativePushNotificationPackage != null ) {
+          mReactNativePushNotificationPackage.newIntent(intent);
+      }
+   }
+
+    ....
+}
+```
+
+Add `onNewIntent` (in `MainActivity.java`)
+
+```java
+import android.content.Intent; // <--- Import Intent
+
+public class MainActivity extends ReactActivity {
+   ...
 
     // Add onNewIntent
     @Override
-    // in RN <= 0.27 you may need to use `protected void onNewIntent (Intent intent) {`
-    public void onNewIntent (Intent intent) {
-      super.onNewIntent(intent);
-
-      mReactNativePushNotificationPackage.newIntent(intent);
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        ((MainApplication) getApplication()).onNewIntent(intent);
     }
-
     ....
 }
 ```
@@ -170,8 +171,8 @@ PushNotification.configure({
     popInitialNotification: true,
 
     /**
-      * IOS ONLY: (optional) default: true
-      * - Specified if permissions will requested or not,
+      * (optional) default: true
+      * - Specified if permissions (ios) and token (android and ios) will requested or not,
       * - if not, you must call PushNotificationsHandler.requestPermissions() later
       */
     requestPermissions: true,
@@ -185,6 +186,7 @@ Notification object example:
 ```javascript
 {
     foreground: false, // BOOLEAN: If the notification was received in foreground or not
+    userInteraction: false, // BOOLEAN: If the notification was opened by the user from the notification area or not
     message: 'My Notification Message', // STRING: The notification message
     data: {}, // OBJECT: The push data
 }
@@ -207,11 +209,21 @@ PushNotification.localNotification({
     smallIcon: "ic_notification", // (optional) default: "ic_notification" with fallback for "ic_launcher"
     bigText: "My big text that will be shown when notification is expanded", // (optional) default: "message" prop
     subText: "This is a subText", // (optional) default: none
-    number: 10, // (optional) default: none (Cannot be zero)
     color: "red", // (optional) default: system default
+    vibrate: true, // (optional) default: true
+    vibration: 300, // vibration length in milliseconds, ignored if vibrate=false, default: 1000
+    tag: 'some_tag', // (optional) add tag to message
+    group: "group", // (optional) add group to message
+
+    /* iOS only properties */
+    alertAction: // (optional) default: view
+    category: // (optional) default: null
+    userInfo: // (optional) default: null (object containing additional notification data)
 
     /* iOS and Android properties */
     message: "My Notification Message" // (required)
+    playSound: false, // (optional) default: true
+    number: 10 // (optional) default: none (Cannot be zero)
 });
 
 PushNotification.localNotificationSchedule({

@@ -1,12 +1,14 @@
 package com.dieam.reactnativepushnotification.modules;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
@@ -22,18 +24,17 @@ import java.util.Set;
 import org.json.*;
 
 import android.content.Context;
+import android.util.Log;
 
 public class RNPushNotification extends ReactContextBaseJavaModule {
     private ReactContext mReactContext;
-    private Activity mActivity;
     private RNPushNotificationHelper mRNPushNotificationHelper;
 
-    public RNPushNotification(ReactApplicationContext reactContext, Activity activity) {
+    public RNPushNotification(ReactApplicationContext reactContext) {
         super(reactContext);
 
-        mActivity = activity;
         mReactContext = reactContext;
-        mRNPushNotificationHelper = new RNPushNotificationHelper(activity.getApplication(), reactContext);
+        mRNPushNotificationHelper = new RNPushNotificationHelper((Application) reactContext.getApplicationContext());
         registerNotificationsRegistration();
         registerNotificationsReceiveNotification();
     }
@@ -46,15 +47,6 @@ public class RNPushNotification extends ReactContextBaseJavaModule {
     @Override
     public Map<String, Object> getConstants() {
         final Map<String, Object> constants = new HashMap<>();
-
-        Intent intent = mActivity.getIntent();
-
-        Bundle bundle = intent.getBundleExtra("notification");
-        if ( bundle != null ) {
-            bundle.putBoolean("foreground", false);
-            String bundleString = convertJSON(bundle);
-            constants.put("initialNotification", bundleString);
-        }
 
         return constants;
     }
@@ -150,6 +142,22 @@ public class RNPushNotification extends ReactContextBaseJavaModule {
     public void scheduleLocalNotification(ReadableMap details) {
         Bundle bundle = Arguments.toBundle(details);
         mRNPushNotificationHelper.sendNotificationScheduled(bundle);
+    }
+
+    @ReactMethod
+    public void getInitialNotification(Promise promise) {
+        WritableMap params = Arguments.createMap();
+        Activity activity = getCurrentActivity();
+        if (activity != null) {
+            Intent intent = activity.getIntent();
+            Bundle bundle = intent.getBundleExtra("notification");
+            if (bundle != null) {
+                bundle.putBoolean("foreground", false);
+                String bundleString = convertJSON(bundle);
+                params.putString("dataJSON", bundleString);
+            }
+        }
+        promise.resolve(params);
     }
 
 }
