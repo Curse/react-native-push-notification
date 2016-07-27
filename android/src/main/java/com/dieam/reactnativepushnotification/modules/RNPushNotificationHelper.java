@@ -95,11 +95,26 @@ public class RNPushNotificationHelper {
 
             Resources res = mContext.getResources();
             String packageName = mContext.getPackageName();
-
+            String subText = bundle.getString("subText");
             String title = bundle.getString("title");
+            String group = bundle.getString("group");
+
             if (title == null) {
-                ApplicationInfo appInfo = mContext.getApplicationInfo();
-                title = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+                String groupName = bundle.getString("groupTitle");
+                String username = bundle.getString("username");
+                if (groupName != null) {
+                    title = groupName;
+                    if (username != null) {
+                        subText = username;
+                    }
+                    group = bundle.getString("groupID");
+                } else if (username != null) {
+                    title = username;
+                    group = username;
+                } else {
+                    ApplicationInfo appInfo = mContext.getApplicationInfo();
+                    title = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+                }
             }
 
             NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext)
@@ -109,7 +124,7 @@ public class RNPushNotificationHelper {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(bundle.getBoolean("autoCancel", true));
 
-            String group = bundle.getString("group");
+            
             if (group != null) {
                 notification.setGroup(group);
             }
@@ -117,8 +132,6 @@ public class RNPushNotificationHelper {
             notification.setContentText(bundle.getString("message"));
 
             String largeIcon = bundle.getString("largeIcon");
-
-            String subText = bundle.getString("subText");
 
             if ( subText != null ) {
                 notification.setSubText(subText);
@@ -194,7 +207,8 @@ public class RNPushNotificationHelper {
                 }
             }
 
-            int notificationID = 0;
+            int notificationID = (int) System.currentTimeMillis();
+            notificationID = 0;
             if (bundle.containsKey("id")) {
                 String notificationIDString = bundle.getString("id");
                 if (notificationIDString != null) {
