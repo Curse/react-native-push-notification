@@ -27,15 +27,15 @@ public class RNPushNotificationHelper {
     }
 
     public Class getMainActivityClass() {
-      String packageName = mContext.getPackageName();
-      Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
-      String className = launchIntent.getComponent().getClassName();
-      try {
-          return Class.forName(className);
-      } catch (ClassNotFoundException e) {
-          e.printStackTrace();
-          return null;
-      }
+        String packageName = mContext.getPackageName();
+        Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        String className = launchIntent.getComponent().getClassName();
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private AlarmManager getAlarmManager() {
@@ -45,7 +45,6 @@ public class RNPushNotificationHelper {
     private PendingIntent getScheduleNotificationIntent(Bundle bundle) {
         int notificationID = 0;
         // String notificationIDString = bundle.getString("id");
-
         // if ( notificationIDString != null ) {
         //     notificationID = Integer.parseInt(notificationIDString);
         // } else {
@@ -132,20 +131,23 @@ public class RNPushNotificationHelper {
             notification.setContentText(bundle.getString("message"));
 
             String largeIcon = bundle.getString("largeIcon");
-
-            if ( subText != null ) {
+            
+            if (subText != null) {
                 notification.setSubText(subText);
             }
 
             if (bundle.containsKey("number")) {
-                String number = bundle.getString("number");
-
-                if (number != null) {
-                    Log.w(TAG, "'number' field set as a string instead of an int");
-                    notification.setNumber(Integer.parseInt(number));
+                try {
+                    int number = (int) bundle.getDouble("number");
+                    notification.setNumber(number);
+                } catch (Exception e) {
+                    String numberAsString = bundle.getString("number");
+                    if(numberAsString != null) {
+                        int number = Integer.parseInt(numberAsString);
+                        notification.setNumber(number);
+                        Log.w(TAG, "'number' field set as a string instead of an int");
+                    }
                 }
-
-                notification.setNumber((int) bundle.getDouble("number"));
             }
 
             int smallIconResId;
@@ -153,21 +155,21 @@ public class RNPushNotificationHelper {
 
             String smallIcon = bundle.getString("smallIcon");
 
-            if ( smallIcon != null ) {
+            if (smallIcon != null) {
                 smallIconResId = res.getIdentifier(smallIcon, "mipmap", packageName);
             } else {
                 smallIconResId = res.getIdentifier("ic_notification", "mipmap", packageName);
             }
 
-            if ( smallIconResId == 0 ) {
+            if (smallIconResId == 0) {
                 smallIconResId = res.getIdentifier("ic_launcher", "mipmap", packageName);
 
-                if ( smallIconResId == 0 ) {
-                    smallIconResId  = android.R.drawable.ic_dialog_info;
+                if (smallIconResId == 0) {
+                    smallIconResId = android.R.drawable.ic_dialog_info;
                 }
             }
 
-            if ( largeIcon != null ) {
+            if (largeIcon != null) {
                 largeIconResId = res.getIdentifier(largeIcon, "mipmap", packageName);
             } else {
                 largeIconResId = res.getIdentifier("ic_launcher", "mipmap", packageName);
@@ -175,14 +177,14 @@ public class RNPushNotificationHelper {
 
             Bitmap largeIconBitmap = BitmapFactory.decodeResource(res, largeIconResId);
 
-            if ( largeIconResId != 0 && ( largeIcon != null || android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP ) ) {
+            if (largeIconResId != 0 && (largeIcon != null || android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP)) {
                 notification.setLargeIcon(largeIconBitmap);
             }
 
             notification.setSmallIcon(smallIconResId);
             String bigText = bundle.getString("bigText");
 
-            if (bigText == null ) {
+            if (bigText == null) {
                 bigText = bundle.getString("message");
             }
 
@@ -198,7 +200,7 @@ public class RNPushNotificationHelper {
                 notification.setSound(defaultSoundUri);
             }
 
-            if ( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ) {
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 notification.setCategory(NotificationCompat.CATEGORY_CALL);
 
                 String color = bundle.getString("color");
@@ -210,17 +212,20 @@ public class RNPushNotificationHelper {
             int notificationID = (int) System.currentTimeMillis();
             notificationID = 0;
             if (bundle.containsKey("id")) {
-                String notificationIDString = bundle.getString("id");
-                if (notificationIDString != null) {
-                    Log.w(TAG, "'id' field set as a string instead of an int");
-
-                    try {
-                        notificationID = Integer.parseInt(notificationIDString);
-                    } catch (NumberFormatException e) {
-                        Log.w(TAG, "'id' field could not be converted to an int, ignoring it", e);
-                    }
-                } else {
+                try {
                     notificationID = (int) bundle.getDouble("id");
+                } catch (Exception e) {
+                    String notificationIDString = bundle.getString("id");
+
+                    if (notificationIDString != null) {
+                        Log.w(TAG, "'id' field set as a string instead of an int");
+
+                        try {
+                            notificationID = Integer.parseInt(notificationIDString);
+                        } catch (NumberFormatException nfe) {
+                            Log.w(TAG, "'id' field could not be converted to an int, ignoring it", nfe);
+                        }
+                    }
                 }
             }
 
