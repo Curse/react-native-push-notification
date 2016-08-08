@@ -21,7 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 public class RNPushNotificationHelper {
-    private static final long DEFAULT_VIBRATION = 1000L;
+    private static final long DEFAULT_VIBRATION = 200L;
     private static final String TAG = RNPushNotificationHelper.class.getSimpleName();
 
     private Context mContext;
@@ -103,6 +103,8 @@ public class RNPushNotificationHelper {
             String group = bundle.getString("group");
             int notificationID = 0;
 
+
+            // Build Notification
             if (title == null) {
                 String groupName = bundle.getString("groupTitle");
                 String username = bundle.getString("username");
@@ -142,7 +144,7 @@ public class RNPushNotificationHelper {
                 notification.setGroup(group);
                 notification.setStyle(getInboxStyle(notificationID));
             }
-
+            
             notification.setContentText(bundle.getString("message"));
 
             String largeIcon = bundle.getString("largeIcon");
@@ -203,7 +205,6 @@ public class RNPushNotificationHelper {
                 bigText = bundle.getString("message");
             }
 
-            notification.setStyle(new NotificationCompat.BigTextStyle().bigText(bigText));
 
             Intent intent = new Intent(mContext, intentClass);
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
