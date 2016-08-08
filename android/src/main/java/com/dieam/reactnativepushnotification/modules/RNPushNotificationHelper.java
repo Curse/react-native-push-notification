@@ -15,6 +15,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.preference.PreferenceManager;
+import android.content.SharedPreferences;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 public class RNPushNotificationHelper {
     private static final long DEFAULT_VIBRATION = 1000L;
@@ -97,6 +101,7 @@ public class RNPushNotificationHelper {
             String subText = bundle.getString("subText");
             String title = bundle.getString("title");
             String group = bundle.getString("group");
+            int notificationID = 0;
 
             if (title == null) {
                 String groupName = bundle.getString("groupTitle");
@@ -107,15 +112,24 @@ public class RNPushNotificationHelper {
                         subText = username;
                     }
                     group = bundle.getString("groupID");
+                    notificationID = group.hashCode();
                 } else if (username != null) {
                     title = username;
                     group = username;
+                    String userID = bundle.getString("friendId");
+                    if (userID != null) {
+                        notificationID = userID.hashCode();
+                    }
                 } else {
                     ApplicationInfo appInfo = mContext.getApplicationInfo();
                     title = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
                 }
             }
 
+            // Add to message history
+            addMessageToConversation(notificationID, bundle.getString("message"));
+
+            // Build notification
             NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext)
                     .setContentTitle(title)
                     .setTicker(bundle.getString("ticker"))
@@ -126,6 +140,7 @@ public class RNPushNotificationHelper {
             
             if (group != null) {
                 notification.setGroup(group);
+                notification.setStyle(getInboxStyle(notificationID));
             }
 
             notification.setContentText(bundle.getString("message"));
@@ -209,8 +224,6 @@ public class RNPushNotificationHelper {
                 }
             }
 
-            int notificationID = (int) System.currentTimeMillis();
-            notificationID = 0;
             if (bundle.containsKey("id")) {
                 try {
                     notificationID = (int) bundle.getDouble("id");
@@ -259,13 +272,87 @@ public class RNPushNotificationHelper {
     }
 
     public void cancelAll() {
-        NotificationManager notificationManager =
+       try {
+            NotificationManager notificationManager =
                 (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        notificationManager.cancelAll();
+            notificationManager.cancelAll();
 
-        Bundle b = new Bundle();
-        b.putString("id", "0");
-        getAlarmManager().cancel(getScheduleNotificationIntent(b));
+            Bundle b = new Bundle();
+            b.putString("id", "0");
+            getAlarmManager().cancel(getScheduleNotificationIntent(b));
+        } catch (Exception e) {
+            Log.e(TAG, "failed to cancel all", e);
+        }
     }
+
+    // Inbox Style
+    private NotificationCompat.Style getInboxStyle(int conversationNumber) {
+        // Set Up
+        NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
+
+        // Messages
+        JSONArray messages = getConversationMessages(conversationNumber);
+        if (messages != null) {
+            for (int i = 0; i < messages.length(); i++) {
+                if (i == 5) {
+                    style.setSummaryText("+" + Integer.toString(messages.length() - 5));
+                    break;
+                }
+                try {
+                    int index = messages.length() - i - 1;
+                    String newLine = messages.getString(index);
+                    style.addLine(newLine);
+                } catch (JSONException e) {
+                    // Don't do nuffin'
+                }
+            }
+        }
+
+        return style;
+    }
+
+    private void addMessageToConversation(int conversationNumber, String message) {
+        try {
+            // Get Current Conversation
+            JSONArray conversation = getConversationMessages(conversationNumber);
+            if (conversation == null) {
+                conversation = new JSONArray();
+            }
+            conversation.put(message);
+
+            // Save
+            saveConversationMessages(conversationNumber, conversation);
+        } catch (Exception e) {
+            //
+        }
+    }
+
+    private JSONArray getConversationMessages(int conversationNumber) {
+        // Get set from sharedPrefs
+        SharedPreferences prefs = getNotificationSharedPreferences();
+        String json = prefs.getString(Integer.toString(conversationNumber), null);
+        if (json != null) {
+            try {
+                return new JSONArray(json);
+            } catch (JSONException e) {
+                return new JSONArray();
+            }
+        }
+        return new JSONArray();
+    }
+
+    private void saveConversationMessages(int conversationNumber, JSONArray messages) {
+        try {
+            SharedPreferences.Editor editor = getNotificationSharedPreferences().edit();
+            editor.putString(Integer.toString(conversationNumber), messages.toString());
+        } catch (Exception e) {
+            //
+        }
+    }
+
+    private SharedPreferences getNotificationSharedPreferences() {
+        return PreferenceManager.getDefaultSharedPreferences(mContext);
+    }
+    
 }

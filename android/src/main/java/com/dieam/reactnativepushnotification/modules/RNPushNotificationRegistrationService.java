@@ -16,9 +16,8 @@ public class RNPushNotificationRegistrationService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String SenderID = intent.getStringExtra("senderID");
-
         try {
+            String SenderID = intent.getStringExtra("senderID");
             InstanceID instanceID = InstanceID.getInstance(this);
             String token = instanceID.getToken(SenderID,
                     GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
