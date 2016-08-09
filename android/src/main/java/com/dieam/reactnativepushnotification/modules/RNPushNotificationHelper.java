@@ -28,6 +28,7 @@ public class RNPushNotificationHelper {
 
     public RNPushNotificationHelper(Application context) {
         mContext = context;
+        RNCursePushNotificationProcessor.setUp(context);
     }
 
     public Class getMainActivityClass() {
@@ -96,177 +97,7 @@ public class RNPushNotificationHelper {
                 return;
             }
 
-            Resources res = mContext.getResources();
-            String packageName = mContext.getPackageName();
-            String subText = bundle.getString("subText");
-            String title = bundle.getString("title");
-            String group = bundle.getString("group");
-            int notificationID = 0;
-
-
-            // Build Notification
-            if (title == null) {
-                String groupName = bundle.getString("groupTitle");
-                String username = bundle.getString("username");
-                if (groupName != null) {
-                    title = groupName;
-                    if (username != null) {
-                        subText = username;
-                    }
-                    group = bundle.getString("groupID");
-                    notificationID = group.hashCode();
-                } else if (username != null) {
-                    title = username;
-                    group = username;
-                    String userID = bundle.getString("friendId");
-                    if (userID != null) {
-                        notificationID = userID.hashCode();
-                    }
-                } else {
-                    ApplicationInfo appInfo = mContext.getApplicationInfo();
-                    title = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
-                }
-            }
-
-            // Add to message history
-            addMessageToConversation(notificationID, bundle.getString("message"));
-
-            // Build notification
-            NotificationCompat.Builder notification = new NotificationCompat.Builder(mContext)
-                    .setContentTitle(title)
-                    .setTicker(bundle.getString("ticker"))
-                    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(bundle.getBoolean("autoCancel", true));
-
-            
-            if (group != null) {
-                notification.setGroup(group);
-                notification.setStyle(getInboxStyle(notificationID));
-            }
-            
-            notification.setContentText(bundle.getString("message"));
-
-            String largeIcon = bundle.getString("largeIcon");
-            
-            if (subText != null) {
-                notification.setSubText(subText);
-            }
-
-            if (bundle.containsKey("number")) {
-                try {
-                    int number = (int) bundle.getDouble("number");
-                    notification.setNumber(number);
-                } catch (Exception e) {
-                    String numberAsString = bundle.getString("number");
-                    if(numberAsString != null) {
-                        int number = Integer.parseInt(numberAsString);
-                        notification.setNumber(number);
-                        Log.w(TAG, "'number' field set as a string instead of an int");
-                    }
-                }
-            }
-
-            int smallIconResId;
-            int largeIconResId;
-
-            String smallIcon = bundle.getString("smallIcon");
-
-            if (smallIcon != null) {
-                smallIconResId = res.getIdentifier(smallIcon, "mipmap", packageName);
-            } else {
-                smallIconResId = res.getIdentifier("ic_notification", "mipmap", packageName);
-            }
-
-            if (smallIconResId == 0) {
-                smallIconResId = res.getIdentifier("ic_launcher", "mipmap", packageName);
-
-                if (smallIconResId == 0) {
-                    smallIconResId = android.R.drawable.ic_dialog_info;
-                }
-            }
-
-            if (largeIcon != null) {
-                largeIconResId = res.getIdentifier(largeIcon, "mipmap", packageName);
-            } else {
-                largeIconResId = res.getIdentifier("ic_launcher", "mipmap", packageName);
-            }
-
-            Bitmap largeIconBitmap = BitmapFactory.decodeResource(res, largeIconResId);
-
-            if (largeIconResId != 0 && (largeIcon != null || android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP)) {
-                notification.setLargeIcon(largeIconBitmap);
-            }
-
-            notification.setSmallIcon(smallIconResId);
-            String bigText = bundle.getString("bigText");
-
-            if (bigText == null) {
-                bigText = bundle.getString("message");
-            }
-
-
-            Intent intent = new Intent(mContext, intentClass);
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            bundle.putBoolean("userInteraction", true);
-            intent.putExtra("notification", bundle);
-
-            if (!bundle.containsKey("playSound") || bundle.getBoolean("playSound")) {
-                Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-                notification.setSound(defaultSoundUri);
-            }
-
-            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                notification.setCategory(NotificationCompat.CATEGORY_CALL);
-
-                String color = bundle.getString("color");
-                if (color != null) {
-                    notification.setColor(Color.parseColor(color));
-                }
-            }
-
-            if (bundle.containsKey("id")) {
-                try {
-                    notificationID = (int) bundle.getDouble("id");
-                } catch (Exception e) {
-                    String notificationIDString = bundle.getString("id");
-
-                    if (notificationIDString != null) {
-                        Log.w(TAG, "'id' field set as a string instead of an int");
-
-                        try {
-                            notificationID = Integer.parseInt(notificationIDString);
-                        } catch (NumberFormatException nfe) {
-                            Log.w(TAG, "'id' field could not be converted to an int, ignoring it", nfe);
-                        }
-                    }
-                }
-            }
-
-            PendingIntent pendingIntent = PendingIntent.getActivity(mContext, notificationID, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-
-            NotificationManager notificationManager =
-                    (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
-
-            notification.setContentIntent(pendingIntent);
-
-            if (!bundle.containsKey("vibrate") || bundle.getBoolean("vibrate")) {
-                long vibration = bundle.containsKey("vibration") ? (long) bundle.getDouble("vibration") : DEFAULT_VIBRATION;
-                if (vibration == 0)
-                    vibration = DEFAULT_VIBRATION;
-                notification.setVibrate(new long[]{0, vibration});
-            }
-
-            Notification info = notification.build();
-            info.defaults |= Notification.DEFAULT_LIGHTS;
-
-            if (bundle.containsKey("tag")) {
-                String tag = bundle.getString("tag");
-                notificationManager.notify(tag, notificationID, info);
-            } else {
-                notificationManager.notify(notificationID, info);
-            }
+            RNCursePushNotificationProcessor.handleNotification(bundle, intentClass);
         } catch (Exception e) {
             Log.e(TAG, "failed to send push notification", e);
         }
@@ -282,6 +113,8 @@ public class RNPushNotificationHelper {
             Bundle b = new Bundle();
             b.putString("id", "0");
             getAlarmManager().cancel(getScheduleNotificationIntent(b));
+
+            RNCursePushNotificationProcessor.clearAll();
         } catch (Exception e) {
             Log.e(TAG, "failed to cancel all", e);
         }
