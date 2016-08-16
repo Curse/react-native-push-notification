@@ -6,12 +6,15 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 
 import java.util.List;
+import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
 import org.json.JSONObject;
 
 public class RNPushNotificationListenerService extends GcmListenerService {
+
+
 
     @Override
     public void onMessageReceived(String from, Bundle bundle) {
@@ -52,17 +55,6 @@ public class RNPushNotificationListenerService extends GcmListenerService {
     }
 
     private boolean isApplicationRunning() {
-        ActivityManager activityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
-        List<RunningAppProcessInfo> processInfos = activityManager.getRunningAppProcesses();
-        for (ActivityManager.RunningAppProcessInfo processInfo : processInfos) {
-            if (processInfo.processName.equals(getApplication().getPackageName())) {
-                if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                    for (String d : processInfo.pkgList) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return RNPushLifecycleHandler.isApplicationInForeground();
     }
 }

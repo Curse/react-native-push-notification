@@ -61,7 +61,7 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
         }
     }
 
-    @Override
+    // @Override
     public void onNewIntent(Intent intent) {
         if (intent.hasExtra("notification")) {
             Bundle bundle = intent.getBundleExtra("notification");
