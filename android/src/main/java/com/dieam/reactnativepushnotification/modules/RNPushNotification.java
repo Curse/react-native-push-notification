@@ -169,4 +169,9 @@ public class RNPushNotification extends ReactContextBaseJavaModule implements Ac
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Ignored, required to implement ActivityEventListener
     }
+
+    
+    public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        // Ignored, required to implement ActivityEventListener
+    }
 }
